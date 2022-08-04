@@ -347,6 +347,16 @@ exports.bytesHuman = function (bytes, si = false, dp = 2) {
 }
 
 
+//helper to open the finder
+exports.openExplorerinMac = function(path, callback) {
+	path = path || '/';
+	let p = spawn('open', [path]);
+	p.on('error', (err) => {
+		p.kill();
+		return callback(err);
+	});
+}
+
 //local utils
 function ranInt(ceil) {
     if (ceil > 0) {

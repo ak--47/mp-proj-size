@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon --inspect --ignore ./node_modules/ index.js"
+    "dev": "nodemon --inspect --ignore ./node_modules/ index.js",
+	"prune" : "cd ./reports && rm -v *.csv"
   },
   "keywords": [],
   "author": "AK",
@@ -21,5 +22,8 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.19"
+  },
+  "bin": {
+    "mpprojsize": "./index.js"
   }
 }

@@ -1,5 +1,6 @@
 # Logs
 reports/*
+!reports/.gitkeep 
 .env
 logs
 *.log

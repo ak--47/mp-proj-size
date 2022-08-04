@@ -52,6 +52,7 @@ require('dotenv').config();
 const u = require('./utils');
 const { log } = require('./logger.js')
 const fs = require('fs');
+const path = require('path');
 
 async function main() {
     //gather input from env
@@ -97,15 +98,23 @@ SUMMARY:
 `)
 
     //save a CSV file with the results
-    let csvFileName = `./reports/eventSizeAnalysis-${Date.now()}`;
+    let csvFileName = `./reports/eventSizeAnalysis-${Date.now()}.csv`;
     fs.writeFile(csvFileName, dataTable.csv, 'utf8', function (err) {
         if (err) {
             console.log('Some error occured - file either not saved or corrupted file saved.');
         }
     })
     //todo write to CSV file
-    log(`these results have been saved to: ${csvFileName}`);
-	log(`	thank you for playing the game.... 👋 `);
+    log(`these results have been saved to: ${csvFileName}\n`);
+    log(`	thank you for playing the game.... 👋 `);
+
+
+    //attempt to reveal the data folder in finder
+    try {
+        u.openExplorerinMac(csvFileName)
+    } catch (e) {        
+    }
+    
 
 
 }
