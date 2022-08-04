@@ -1,0 +1,4 @@
+API_SECRET="superSecret" #api secret for project
+START_DATE="01-01-2022" #when to start looking for events
+END_DATE="08-01-2022" #when to stop looking for events
+ITERATIONS="10" #60 is the max before you get rate limited; ~20 is usually enough if your data is fairly uniform
