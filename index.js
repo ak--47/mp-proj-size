@@ -53,12 +53,15 @@ const { log } = require('./logger.js')
 
 async function main() {
 	//gather input from env
-	const { API_SECRET, START_DATE, END_DATE, ITERATIONS } = process.env
+	const { API_SECRET, START_DATE, END_DATE, ITERATIONS } = process.env;
+	const auth = Buffer.from(API_SECRET + '::').toString('base64');
 	
 	//get all the things we need
 	const randomDaysToPull = u.getRandomDaysBetween(START_DATE, END_DATE, ITERATIONS);
-	const randomEvents = await u.pullRandomEvents(API_SECRET, randomDaysToPull);
-	const rawEventsGrouped = u.groupRaw(randomEvents)
+	const randomEvents = await u.pullRandomEvents(auth, randomDaysToPull);
+	const rawEventsGrouped = u.groupRaw(randomEvents);
+	const totalsAndPercents = await u.getAllEvents(auth, START_DATE, END_DATE)
+	
 
 	//do analysis
 	
