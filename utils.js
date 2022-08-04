@@ -13,15 +13,17 @@ exports.getRandomDaysBetween = function (startDate, endDate, numTimes) {
     const start = dayjs(startDate);
     const end = dayjs(endDate);
     const delta = end.diff(start, 'days');
-    const results = [];
+    const selectedDates = [];
 
     for (let i = 0; i < numTimes; i++) {
         let randomDay = start.add(ranInt(delta), 'days').format(dateFormat);
-        results.push(randomDay)
+        selectedDates.push(randomDay)
 
     }
 
-    return results
+    return {
+		delta, selectedDates
+	}
 }
 
 exports.pullRandomEvents = async function (auth, dates) {
@@ -261,6 +263,15 @@ exports.joinRawAndSummary = function (raw, calculated, startDate, endDate) {
             raw[uniqueEvent].meta.estimatedTotal = estimateOfTotal
             raw[uniqueEvent].meta.estimatedAggSize = estimateOfTotal * raw[uniqueEvent].meta.avgSize
         }
+		
+		//hidden events can't be quried in insights
+		else {
+			const percentOfTotal = `unknown`;
+            const estimateOfTotal = `event hidden`
+            raw[uniqueEvent].meta.percent = 0
+            raw[uniqueEvent].meta.estimatedTotal = estimateOfTotal
+            raw[uniqueEvent].meta.estimatedAggSize = 0
+		}
     }
 
     result.raw = raw
@@ -268,38 +279,73 @@ exports.joinRawAndSummary = function (raw, calculated, startDate, endDate) {
 
 }
 
-exports.buildTable = function (analyzedEvents) {
-    const headers = `eventName,numSamples,avgSize,percentOfVolume,estimatedVolume,estimatedSize`;
+exports.buildTable = function (analyzedEvents, summary) {
+    const headers = `"eventName","numSamples","numDays","avgSize","percentOfVolume","estimatedVolume","estimatedSize"`;
+    let body = ``
+    let table = []
+    let columns = headers.split(',').map(header => header.replaceAll('"', ''));
     let { raw } = analyzedEvents
+    for (const event in raw) {
+        const e = raw[event]
+        const row = `"${event}","${e.samples.length}","${smartCommas(analyzedEvents.numDays)}","${exports.bytesHuman(roundAccurately(e.meta.avgSize))}","${roundAccurately(e.meta.percent * 100, 2)}%","${smartCommas(roundAccurately(e.meta.estimatedTotal))}","${exports.bytesHuman(e.meta.estimatedAggSize)}"`
+        body += row
+        body += "\n"
+        const tableRowData = row.split(',"').map(row => row.replaceAll('"', ''));
+        let tableRowSummary = {};
+        for (const [index, value] of tableRowData.entries()) {
+            tableRowSummary[columns[index]] = value
+        }
+        table.push(tableRowSummary)
+    }
+
+	let totalTable = {
+		eventName: "TOTALS",
+		numSamples: `---`,
+		avgSize : `---`,
+		numDays : analyzedEvents.numDays.toString(),
+		percentOfVolume: `100%`,
+		estimatedVolume: smartCommas(summary.totalEvents),
+		estimatedSize: exports.bytesHuman(summary.estimatedSizeOnDisk)
+	}
+
+	body += `\n"${totalTable.eventName}","${totalTable.numSamples}","${smartCommas(analyzedEvents.numDays)}","${totalTable.avgSize}","${totalTable.percentOfVolume}","${totalTable.estimatedVolume}","${totalTable.estimatedSize}\n`
+	table.push(totalTable)
+
+    body = body.trim()
+
+    let csv = headers.concat("\n", body)
+
+    return {
+        csv,
+        table,
+        columns
+    }
 
 
-    debugger;
 
 }
 
 //https://stackoverflow.com/a/14919494
-exports.humanFileSize = function(bytes, si=false, dp=1) {
-	const thresh = si ? 1000 : 1024;
-  
-	if (Math.abs(bytes) < thresh) {
-	  return bytes + ' B';
-	}
-  
-	const units = si 
-	  ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
-	  : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-	let u = -1;
-	const r = 10**dp;
-  
-	do {
-	  bytes /= thresh;
-	  ++u;
-	} while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-  
-  
-	return bytes.toFixed(dp) + ' ' + units[u];
-  }
-  
+exports.bytesHuman = function (bytes, si = false, dp = 2) {
+    const thresh = si ? 1000 : 1024;
+
+    if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+
+    const units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    let u = -1;
+    const r = 10 ** dp;
+
+    do {
+        bytes /= thresh;
+        ++u;
+    } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+
+    return bytes.toFixed(dp) + ' ' + units[u];
+}
+
 
 //local utils
 function ranInt(ceil) {
@@ -309,7 +355,6 @@ function ranInt(ceil) {
         return 0
     }
 }
-
 
 function buildJQL(date) {
     return `function main() {
@@ -326,7 +371,23 @@ function json(data) {
     return JSON.stringify(data, null, 2)
 }
 
+//caculates size in bytes; assumes utf-8 encoding: https://stackoverflow.com/a/63805778 
 function calcSize(event) {
-    //caculates size in bytes: https://stackoverflow.com/a/63805778
     return Buffer.byteLength(JSON.stringify(event))
+}
+
+function smartCommas(x) {
+    try {
+	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	}
+	catch(e) {
+		return x
+	}
+}
+
+exports.smartCommas = smartCommas
+
+//https://gist.github.com/djD-REK/068cba3d430cf7abfddfd32a5d7903c3
+function roundAccurately(number, decimalPlaces = 0) {
+    return Number(Math.round(number + "e" + decimalPlaces) + "e-" + decimalPlaces)
 }
