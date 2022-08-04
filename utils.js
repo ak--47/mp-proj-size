@@ -83,7 +83,15 @@ exports.groupRaw = function (dailyIterations) {
     raw = raw.flat();
 
     const grouped = _.groupBy(raw, event => event.name);
-    return grouped
+
+    //clean up data structure
+    let result = {};
+    for (let uniqueEventName in grouped) {
+        result[uniqueEventName] = {}
+        result[uniqueEventName].samples = grouped[uniqueEventName]
+        result[uniqueEventName].meta = {};
+    }
+    return result
 }
 
 
@@ -216,7 +224,82 @@ exports.getAllEvents = async function (auth, start, end) {
 
 }
 
+exports.sizeEvents = function (eventSamples) {
+    for (let uniqueEvent in eventSamples) {
+        eventSamples[uniqueEvent].meta.sizes = []
+        for (let sampleEvent of eventSamples[uniqueEvent].samples) {
+            eventSamples[uniqueEvent].meta.sizes.push(calcSize(sampleEvent))
+        }
 
+        //calc average for each unique event
+        let average = eventSamples[uniqueEvent].meta.sizes.reduce(function (sum, eventSizeInBytes) {
+            return sum + parseFloat(eventSizeInBytes);
+        }, 0) / eventSamples[uniqueEvent].meta.sizes.length;
+
+        eventSamples[uniqueEvent].meta.avgSize = average
+    }
+
+    return eventSamples;
+}
+
+exports.joinRawAndSummary = function (raw, calculated, startDate, endDate) {
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const delta = end.diff(start, 'days');
+
+    const result = {
+        total: calculated.total,
+        numDays: delta
+    }
+    const { segmented } = calculated
+
+    for (const uniqueEvent in raw) {
+        if (segmented[uniqueEvent]) {
+            const percentOfTotal = segmented[uniqueEvent].all;
+            const estimateOfTotal = percentOfTotal * calculated.total
+            raw[uniqueEvent].meta.percent = percentOfTotal
+            raw[uniqueEvent].meta.estimatedTotal = estimateOfTotal
+            raw[uniqueEvent].meta.estimatedAggSize = estimateOfTotal * raw[uniqueEvent].meta.avgSize
+        }
+    }
+
+    result.raw = raw
+    return result
+
+}
+
+exports.buildTable = function (analyzedEvents) {
+    const headers = `eventName,numSamples,avgSize,percentOfVolume,estimatedVolume,estimatedSize`;
+    let { raw } = analyzedEvents
+
+
+    debugger;
+
+}
+
+//https://stackoverflow.com/a/14919494
+exports.humanFileSize = function(bytes, si=false, dp=1) {
+	const thresh = si ? 1000 : 1024;
+  
+	if (Math.abs(bytes) < thresh) {
+	  return bytes + ' B';
+	}
+  
+	const units = si 
+	  ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] 
+	  : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+	let u = -1;
+	const r = 10**dp;
+  
+	do {
+	  bytes /= thresh;
+	  ++u;
+	} while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+  
+  
+	return bytes.toFixed(dp) + ' ' + units[u];
+  }
+  
 
 //local utils
 function ranInt(ceil) {
@@ -244,7 +327,6 @@ function json(data) {
 }
 
 function calcSize(event) {
-	//caculates size in bytes: https://stackoverflow.com/a/63805778
-	return Buffer.byteLength(JSON.stringify(obj))
-
+    //caculates size in bytes: https://stackoverflow.com/a/63805778
+    return Buffer.byteLength(JSON.stringify(event))
 }

@@ -60,10 +60,29 @@ async function main() {
 	const randomDaysToPull = u.getRandomDaysBetween(START_DATE, END_DATE, ITERATIONS);
 	const randomEvents = await u.pullRandomEvents(auth, randomDaysToPull);
 	const rawEventsGrouped = u.groupRaw(randomEvents);
-	const totalsAndPercents = await u.getAllEvents(auth, START_DATE, END_DATE)
-	
+	const rawEventsSized = u.sizeEvents(rawEventsGrouped);
+	const totalsAndPercents = await u.getAllEvents(auth, START_DATE, END_DATE);
+	const combineTotalsAndRaw = u.joinRawAndSummary(rawEventsSized, totalsAndPercents, START_DATE, END_DATE);
+	const uniqueEvents = Object.keys(combineTotalsAndRaw.raw);
+	const summaries = combineTotalsAndRaw.raw
 
-	//do analysis
+	//do analysis	
+	const analysis = {
+		days: combineTotalsAndRaw.numDays,
+		numUniqueEvents: uniqueEvents.length,
+		totalEvents: combineTotalsAndRaw.total,		
+		uniqueEvents,
+		estimatedSizeOnDisk: 0
+	}
+	for (let eventSummary in summaries) {
+		analysis.estimatedSizeOnDisk += summaries[eventSummary].meta.estimatedAggSize
+	}
+	
+	//build a data table to show work
+	const dataTable = u.buildTable(combineTotalsAndRaw);
+
+	
+	
 	
 	debugger;
 
