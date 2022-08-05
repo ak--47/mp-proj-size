@@ -5,6 +5,7 @@ const dayjs = require('dayjs')
 const dateFormat = `YYYY-MM-DD`
 const fetch = require('axios').default
 const { log } = require('./logger.js')
+const { spawn } = require('child_process')
 
 
 
@@ -22,8 +23,9 @@ exports.getRandomDaysBetween = function (startDate, endDate, numTimes) {
     }
 
     return {
-		delta, selectedDates
-	}
+        delta,
+        selectedDates
+    }
 }
 
 exports.pullRandomEvents = async function (auth, dates) {
@@ -47,9 +49,9 @@ exports.pullRandomEvents = async function (auth, dates) {
         try {
             res = await fetch(opts)
         } catch (e) {
-            log(`error calling /jql`)
-            log(`${e.message} : ${e.response.statusText}`)
-            log(json(e.response.data))
+            log(`error calling /jql`, 'e')
+            log(`${e.message} : ${e.response.statusText}`, 'e')
+            log(json(e.response.data), 'e')
             process.exit(0)
         }
 
@@ -220,6 +222,7 @@ exports.getAllEvents = async function (auth, start, end) {
         }
 
     } catch (e) {
+        log(e, 'e')
         debugger;
         process.exit(0);
     }
@@ -263,15 +266,15 @@ exports.joinRawAndSummary = function (raw, calculated, startDate, endDate) {
             raw[uniqueEvent].meta.estimatedTotal = estimateOfTotal
             raw[uniqueEvent].meta.estimatedAggSize = estimateOfTotal * raw[uniqueEvent].meta.avgSize
         }
-		
-		//hidden events can't be quried in insights
-		else {
-			const percentOfTotal = `unknown`;
+
+        //hidden events can't be quried in insights
+        else {
+            const percentOfTotal = `unknown`;
             const estimateOfTotal = `event hidden`
             raw[uniqueEvent].meta.percent = 0
             raw[uniqueEvent].meta.estimatedTotal = estimateOfTotal
             raw[uniqueEvent].meta.estimatedAggSize = 0
-		}
+        }
     }
 
     result.raw = raw
@@ -298,18 +301,18 @@ exports.buildTable = function (analyzedEvents, summary) {
         table.push(tableRowSummary)
     }
 
-	let totalTable = {
-		eventName: "TOTALS",
-		numSamples: `---`,
-		avgSize : `---`,
-		numDays : analyzedEvents.numDays.toString(),
-		percentOfVolume: `100%`,
-		estimatedVolume: smartCommas(summary.totalEvents),
-		estimatedSize: exports.bytesHuman(summary.estimatedSizeOnDisk)
-	}
+    let totalTable = {
+        eventName: "TOTALS",
+        numSamples: `---`,
+        avgSize: `---`,
+        numDays: analyzedEvents.numDays.toString(),
+        percentOfVolume: `100%`,
+        estimatedVolume: smartCommas(summary.totalEvents),
+        estimatedSize: exports.bytesHuman(summary.estimatedSizeOnDisk)
+    }
 
-	body += `\n"${totalTable.eventName}","${totalTable.numSamples}","${smartCommas(analyzedEvents.numDays)}","${totalTable.avgSize}","${totalTable.percentOfVolume}","${totalTable.estimatedVolume}","${totalTable.estimatedSize}\n`
-	table.push(totalTable)
+    body += `\n"${totalTable.eventName}","${totalTable.numSamples}","${smartCommas(analyzedEvents.numDays)}","${totalTable.avgSize}","${totalTable.percentOfVolume}","${totalTable.estimatedVolume}","${totalTable.estimatedSize}\n`
+    table.push(totalTable)
 
     body = body.trim()
 
@@ -348,13 +351,13 @@ exports.bytesHuman = function (bytes, si = false, dp = 2) {
 
 
 //helper to open the finder
-exports.openExplorerinMac = function(path, callback) {
-	path = path || '/';
-	let p = spawn('open', [path]);
-	p.on('error', (err) => {
-		p.kill();
-		return callback(err);
-	});
+exports.openExplorerinMac = function (path, callback) {
+    path = path || '/';
+    let p = spawn('open', [path]);
+    p.on('error', (err) => {
+        p.kill();
+        return callback(err);
+    });
 }
 
 //local utils
@@ -388,11 +391,10 @@ function calcSize(event) {
 
 function smartCommas(x) {
     try {
-	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-	}
-	catch(e) {
-		return x
-	}
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    } catch (e) {
+        return x
+    }
 }
 
 exports.smartCommas = smartCommas

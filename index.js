@@ -60,9 +60,10 @@ async function main() {
     const auth = Buffer.from(API_SECRET + '::').toString('base64');
 
     //get all the things we need
-    log(`👋 ... let's estimate how big your mixpanel project is...`)
+    log(`\n👋 ... let's estimate how big your mixpanel project is..\n`)
     const randomDaysToPull = u.getRandomDaysBetween(START_DATE, END_DATE, ITERATIONS);
-    log(`	between ${START_DATE} and ${END_DATE}, there are ${randomDaysToPull.delta} days... i will randomly choose ${ITERATIONS} days within that range`)
+    log(`	between ${START_DATE} and ${END_DATE}, there are ${randomDaysToPull.delta} days...`)
+	log(`	sampling events from ${ITERATIONS} days...`)
     const randomEvents = await u.pullRandomEvents(auth, randomDaysToPull.selectedDates);
 
     const rawEventsGrouped = u.groupRaw(randomEvents);
@@ -71,7 +72,8 @@ async function main() {
     const combineTotalsAndRaw = u.joinRawAndSummary(rawEventsSized, totalsAndPercents, START_DATE, END_DATE);
     const uniqueEvents = Object.keys(combineTotalsAndRaw.raw);
     const summaries = combineTotalsAndRaw.raw
-    log(`\ni found ${uniqueEvents.length} unique events across the time range... i will now analyze ~${ITERATIONS} of each of these events\n`)
+    log(`	${uniqueEvents.length} unique events exist...`)
+	log(`	analyzing ~${ITERATIONS} of each\n`)
 
     //do analysis	
     const analysis = {
@@ -87,34 +89,37 @@ async function main() {
 
     //build a data table to show work
     const dataTable = u.buildTable(combineTotalsAndRaw, analysis);
-    log(`here is what I found:`)
+    log(`here is what i found:`)
     console.table(dataTable.table)
 
-    console.log(`
-SUMMARY:
+    log(`\nSUMMARY:`, 'p')
+    log(`
 	over ${analysis.days} days (${START_DATE} - ${END_DATE})
 	i found ${analysis.uniqueEvents.length} unique events and ${u.smartCommas(analysis.totalEvents)} total events
-	these estimated size on disk is: ${u.bytesHuman(analysis.estimatedSizeOnDisk)} (uncompressed)	
-`)
+	these estimated size on disk is: ${u.bytesHuman(analysis.estimatedSizeOnDisk)} (uncompressed)\n\n`)
+
+	// todo, projections for 6/12/18/24/36 months?
+	// log(`\nANALYSIS`, 'p')
 
     //save a CSV file with the results
     let csvFileName = `./reports/eventSizeAnalysis-${Date.now()}.csv`;
     fs.writeFile(csvFileName, dataTable.csv, 'utf8', function (err) {
         if (err) {
-            console.log('Some error occured - file either not saved or corrupted file saved.');
+            log('Some error occured - file either not saved or corrupted file saved.', 'e');
         }
     })
     //todo write to CSV file
     log(`these results have been saved to: ${csvFileName}\n`);
-    log(`	thank you for playing the game.... 👋 `);
+    log(`thank you for playing the game.... 👋 `);
 
 
     //attempt to reveal the data folder in finder
     try {
-        u.openExplorerinMac(csvFileName)
-    } catch (e) {        
-    }
-    
+        u.openExplorerinMac(`./reports/`)
+    } catch (e) {
+		debugger;
+	}
+
 
 
 }
