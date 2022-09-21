@@ -10,7 +10,7 @@ function log(data, opts = `s`) {
    }
 	
     console.log(styles[opts](data))
-	console.log(cliSpinners.random)
+	// console.log(cliSpinners.random)
 }
 
 
