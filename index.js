@@ -106,7 +106,7 @@ async function main() {
 	// log(`\nANALYSIS`, 'p')
 
     //save a CSV file with the results
-    let csvFileName = `./reports/eventSizeAnalysis-${Date.now()}.csv`;
+    let csvFileName = `./eventSizeAnalysis-${Date.now()}.csv`;
     fs.writeFile(csvFileName, dataTable.csv, 'utf8', function (err) {
         if (err) {
             log('Some error occured - file either not saved or corrupted file saved.', 'e');

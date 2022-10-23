@@ -20,3 +20,18 @@ npx mp-proj-size
   see:
 
 <img src="https://aktunes.neocities.org/projSize.png" alt="result" />
+
+
+note:
+
+this script uses **JQL** so it only works on projects in which `/jql` is accessible:
+
+```javascript
+function main() {
+		return Events({
+		  from_date: '${date}',
+		  to_date:   '${date}'
+		})
+		.groupBy(["name"], mixpanel.reducer.any());
+	  }
+```
