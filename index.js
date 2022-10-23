@@ -53,6 +53,9 @@ const u = require('./utils');
 const { log } = require('./logger.js')
 const fs = require('fs');
 const path = require('path');
+const ak = require('ak-tools');
+const track = ak.tracker('mp-proj-Size');
+const runId = ak.uid(32);
 
 async function main() {
     //gather input from env
@@ -60,6 +63,7 @@ async function main() {
     const auth = Buffer.from(API_SECRET + '::').toString('base64');
 
     //get all the things we need
+	track('start', {runId})
     log(`\n👋 ... let's estimate how big your mixpanel project is..\n`)
     const randomDaysToPull = u.getRandomDaysBetween(START_DATE, END_DATE, ITERATIONS);
     log(`	between ${START_DATE} and ${END_DATE}, there are ${randomDaysToPull.delta} days...`)
@@ -106,11 +110,13 @@ async function main() {
     fs.writeFile(csvFileName, dataTable.csv, 'utf8', function (err) {
         if (err) {
             log('Some error occured - file either not saved or corrupted file saved.', 'e');
+			track('error', {type: "file export", runId})
         }
     })
     //todo write to CSV file
     log(`these results have been saved to: ${csvFileName}\n`);
     log(`thank you for playing the game.... 👋 `);
+	track('end', {runId})
 
 
     //attempt to reveal the data folder in finder
@@ -125,4 +131,14 @@ async function main() {
 }
 
 
-main();
+
+
+//this allows the module to function as a standalone script
+if (require.main === module) {
+	main(null).then((result) => {
+		main();
+		// console.log(`RESULTS:\n\n`);
+		// console.log(JSON.stringify(result, null, 2));
+	});
+
+}
