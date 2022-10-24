@@ -1,6 +1,6 @@
 {
   "name": "mp-proj-size",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "estimate the size of a mixpanel project",
   "main": "index.js",
   "scripts": {

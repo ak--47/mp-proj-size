@@ -133,15 +133,15 @@ async function main() {
 
 
 
-// //this allows the module to function as a standalone script
-// if (require.main === module) {
-// 	main(null).then((result) => {		
-// 		// console.log(`RESULTS:\n\n`);
-// 		// console.log(JSON.stringify(result, null, 2));
-// 	});
+//this allows the module to function as a standalone script
+if (require.main === module) {
+	main(null).then((result) => {		
+		// console.log(`RESULTS:\n\n`);
+		// console.log(JSON.stringify(result, null, 2));
+	});
 
-// }
+}
 
-// else {
-// 	main()
-// }
+else {
+	main()
+}
