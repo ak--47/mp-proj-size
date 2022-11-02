@@ -1,6 +1,6 @@
 {
   "name": "mp-proj-size",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "estimate the size of a mixpanel project",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "prune": "cd ./reports && rm -v *.csv",
 	"post": "npm publish"
   },
-  "keywords": [],
+  "keywords": ["mixpanel", "project size", "analytics", "events", "calculator", "CLI"],
   "author": "AK",
   "license": "ISC",
   "dependencies": {
