@@ -48,7 +48,7 @@ ak@mixpanel.com
 
 
 //deps
-require('dotenv').config();
+require('dotenv').config({override: true});
 const u = require('./utils');
 const { log } = require('./logger.js')
 const fs = require('fs');
@@ -106,7 +106,8 @@ async function main() {
 	// log(`\nANALYSIS`, 'p')
 
     //save a CSV file with the results
-    let csvFileName = `./eventSizeAnalysis-${Date.now()}.csv`;
+	await ak.mkdir('./reports')
+    let csvFileName = `./reports/eventSizeAnalysis-${Date.now()}.csv`;
     fs.writeFile(csvFileName, dataTable.csv, 'utf8', function (err) {
         if (err) {
             log('Some error occured - file either not saved or corrupted file saved.', 'e');
